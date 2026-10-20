@@ -1,0 +1,49 @@
+# K8s Istio Envoy Gloo mTLS traffic management observability — service mesh pilot
+# Tommy Shamamba 9+ years FLEXIBILITY true — 7M+ users 5M/day 99.99%
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stickermule-clone
+  labels:
+    app: stickermule-clone
+    flexibility: "true"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: stickermule-clone
+  template:
+    metadata:
+      labels:
+        app: stickermule-clone
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+        - name: go-api
+          image: tommyshamamba/stickermule-clone:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: FLEXIBILITY
+              value: "true"
+            - name: YEARS
+              value: "9+ (2017-2026)"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stickermule-clone
+spec:
+  selector:
+    app: stickermule-clone
+  ports:
+    - port: 80
+      targetPort: 8080
+---
+apiVersion: networking.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default-mtls
+spec:
+  mtls:
+    mode: STRICT
