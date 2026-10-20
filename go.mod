@@ -1,3 +1,3 @@
-module github.com/tommyshamamba/stickermule-clone
+module github.com/tommyshamamba/custom-print-storefront
 
 go 1.22
