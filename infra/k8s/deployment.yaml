@@ -1,49 +1,39 @@
-# K8s Istio Envoy Gloo mTLS traffic management observability — service mesh pilot
-# Tommy Shamamba 9+ years FLEXIBILITY true — 7M+ users 5M/day 99.99%
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: stickermule-clone
+  name: storefront-api
   labels:
-    app: stickermule-clone
-    flexibility: "true"
+    app: storefront-api
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
-      app: stickermule-clone
+      app: storefront-api
   template:
     metadata:
       labels:
-        app: stickermule-clone
-        sidecar.istio.io/inject: "true"
+        app: storefront-api
     spec:
       containers:
-        - name: go-api
-          image: tommyshamamba/stickermule-clone:latest
+        - name: api
+          image: storefront-api:local
           ports:
             - containerPort: 8080
-          env:
-            - name: FLEXIBILITY
-              value: "true"
-            - name: YEARS
-              value: "9+ (2017-2026)"
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+          resources:
+            requests: { cpu: 50m, memory: 32Mi }
+            limits: { cpu: 250m, memory: 128Mi }
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: stickermule-clone
+  name: storefront-api
 spec:
   selector:
-    app: stickermule-clone
+    app: storefront-api
   ports:
     - port: 80
       targetPort: 8080
----
-apiVersion: networking.istio.io/v1beta1
-kind: PeerAuthentication
-metadata:
-  name: default-mtls
-spec:
-  mtls:
-    mode: STRICT

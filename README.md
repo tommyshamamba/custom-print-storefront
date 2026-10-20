@@ -1,54 +1,55 @@
-# stickermule-clone
+# Custom Print Storefront
 
-Sticker Mule Software Engineer clone — **Tommy Shamamba** — 9+ years (2017-2026) — **FLEXIBILITY**.
+[![CI](https://github.com/tommyshamamba/stickermule-clone/actions/workflows/ci.yml/badge.svg)](https://github.com/tommyshamamba/stickermule-clone/actions/workflows/ci.yml)
 
-Go backend GraphQL Redis pub/sub Stripe — React storefront — Expo mobile — Python inference runtime — K8s Istio Envoy Gloo mTLS.
+A multi-tenant checkout API in Go with a small React storefront. It covers idempotent order
+creation, tenant isolation, and event publishing with retries.
 
-## Metrics
+> Portfolio project. Orders are kept in memory and no payment provider is connected.
+> It claims no production use or traffic figures.
 
-- 7M+ users
-- 5M events/day
-- 99.99% uptime
-- latency -35% p95 120->72ms
-- MTTR -45%
-- sync -40%
-- FLEXIBILITY true — FLEXIBILITY single codebase web+mobile — FLEXIBILITY feature flags — FLEXIBILITY dynamic scaling — FLEXIBILITY hire-ready
+## What it does
 
-## Stack — ATS verbatim
+- `POST /api/checkout` validates `tenant_id`, `product_id` and `quantity` (1–10,000) and creates an order.
+  A repeated `idempotency_key` within the same tenant returns the original order with `200` instead of `201`.
+- Orders are stored per tenant, so `GET /api/tenants/{tenant}/orders/{id}` never returns another tenant's order.
+- Each new order emits an `orders.created` event through a `Publisher` interface. Publishing is
+  retried up to 3 times with exponential backoff (50 ms, 100 ms, 200 ms, capped at 2 s). If every
+  attempt fails, the API returns `503`.
+- `GET /healthz` is used by the Kubernetes probes. Logs are structured JSON (`log/slog`).
 
-Go TypeScript Python C++ CUDA React Expo GraphQL Postgres MySQL Redis DynamoDB ClickHouse SQS Beanstalk DLQ AWS GCP K8s Docker Terraform Istio Envoy Gloo mTLS RBAC Datadog llama.cpp ggml quantization multi-GPU
-
-## Structure
+## Architecture
 
 ```
-backend-go/cmd/server/main.go
-backend-go/internal/notify/service.go
-frontend-react/src/App.tsx
-python-ai/main.py
-mobile-expo/App.tsx
-infra/k8s/deployment.yaml
-README.md
+frontend-react (Vite + React) ──/api──► backend-go/cmd/server (net/http, Go 1.22 routing)
+                                              │
+                                              ▼
+                                  internal/orders.Service
+                                  ├─ per-tenant order map + idempotency index (mutex)
+                                  └─ Publisher interface ─► log publisher (swap for Redis/queue)
 ```
+
+`infra/k8s/deployment.yaml` deploys the API with readiness/liveness probes and resource limits.
+The Dockerfile builds a static binary into a distroless non-root image.
 
 ## Run
 
-```bash
-go run backend-go/cmd/server/main.go
-uvicorn python-ai.main:app --port 8001
+```sh
+go run ./backend-go/cmd/server                       # API on :8080
+cd frontend-react && npm install && npm run dev      # storefront, proxies /api to :8080
+docker build -t storefront-api . && docker run -p 8080:8080 storefront-api
 ```
 
-## Push
+## Tests
 
-```bash
-git init
-git add .
-git commit -m "Sticker Mule Clone Senior 9+ years FLEXIBILITY Go GraphQL Redis React Expo"
-git branch -M main
-git remote add origin https://github.com/tommyshamamba/stickermule-clone.git
-git push -u origin main
+```sh
+go vet ./... && go test -race ./...
 ```
 
-## Contact
+Unit tests cover idempotency across tenants, tenant isolation, validation, publish retry and
+backoff. An HTTP test checks the 201/200/422 responses. CI runs gofmt, vet, race-enabled tests,
+a Docker build and the frontend type-check/build.
 
-shamambatommy@gmail.com | 817-448-4871 | Fort Worth TX CST  
-Hire-ready for Sticker Mule $150k-$250k + $20k bonus — FLEXIBILITY
+## License
+
+MIT
