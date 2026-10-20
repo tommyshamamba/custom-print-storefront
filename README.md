@@ -1,6 +1,6 @@
 # Custom Print Storefront
 
-[![CI](https://github.com/tommyshamamba/stickermule-clone/actions/workflows/ci.yml/badge.svg)](https://github.com/tommyshamamba/stickermule-clone/actions/workflows/ci.yml)
+[![CI](https://github.com/tommyshamamba/custom-print-storefront/actions/workflows/ci.yml/badge.svg)](https://github.com/tommyshamamba/custom-print-storefront/actions/workflows/ci.yml)
 
 A multi-tenant checkout API in Go with a small React storefront. It covers idempotent order
 creation, tenant isolation, and event publishing with retries.
